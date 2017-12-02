@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate nom;
+
 use std::str::FromStr;
 
 
@@ -9,16 +12,14 @@ struct Spreadsheet {
 }
 
 impl FromStr for Spreadsheet {
-    type Err = ();
+    type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Spreadsheet {
-            values: s.lines().map(|line| {
-                line.split_whitespace().map(|word| {
-                    word.parse().expect("Invalid number")
-                }).collect()
-            }).collect()
-        })
+        named!(value<&str, u32>, map_res!(nom::digit, str::parse));
+        named!(line<&str, Vec<u32>>, separated_list_complete!(nom::space, value));
+        separated_list_complete!(s, nom::line_ending, line)
+            .map(|values| Spreadsheet { values: values })
+            .to_result()
     }
 }
 
