@@ -18,8 +18,8 @@ impl FromStr for Node {
     type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        named!(name<&str, String>, map_res!(alpha, FromStr::from_str));
-        named!(number<&str, u32>, map_res!(digit, FromStr::from_str));
+        named!(name<&str, String>, map_res!(alpha, str::parse));
+        named!(number<&str, u32>, map_res!(digit, str::parse));
         named!(namelist<&str, Vec<String>>, separated_nonempty_list_complete!(tag!(", "), name));
         complete!(s, do_parse!(
             name: name >> space >>

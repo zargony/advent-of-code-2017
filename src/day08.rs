@@ -57,8 +57,8 @@ impl FromStr for Instruction {
     type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        named!(identifier<&str, String>, map_res!(ws!(alpha), FromStr::from_str));
-        named!(number<&str, i32>, map_res!(ws!(digit), FromStr::from_str));
+        named!(identifier<&str, String>, map_res!(ws!(alpha), str::parse));
+        named!(number<&str, i32>, map_res!(ws!(digit), str::parse));
         named!(value<&str, i32>, alt!(
             map!(preceded!(tag!("-"), number), |x| -x) |
             number
