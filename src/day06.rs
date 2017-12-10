@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn parsing() {
-        assert_eq!(Memory::from_str("0\t2\t7\t0").unwrap(), Memory { banks: vec![0, 2, 7, 0] });
+        assert_eq!(Memory::from_str("0\t2\t7\t0"), Ok(Memory { banks: vec![0, 2, 7, 0] }));
     }
 
     #[test]

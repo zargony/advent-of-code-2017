@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn parsing() {
-        assert_eq!(Instructions::from_str("0\n3\n0\n1\n-3").unwrap(), Instructions { jumps: vec![0, 3, 0, 1, -3] });
+        assert_eq!(Instructions::from_str("0\n3\n0\n1\n-3"), Ok(Instructions { jumps: vec![0, 3, 0, 1, -3] }));
     }
 
     #[test]
