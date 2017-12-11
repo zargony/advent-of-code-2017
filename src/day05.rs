@@ -9,10 +9,10 @@ struct Instructions {
 }
 
 impl FromStr for Instructions {
-    type Err = ();
+    type Err = std::num::ParseIntError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Instructions { jumps: s.lines().map(|l| l.parse().unwrap()).collect() })
+        Ok(Instructions { jumps: try!(s.lines().map(str::parse).collect()) })
     }
 }
 

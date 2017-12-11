@@ -97,7 +97,7 @@ impl FromStr for Code {
     type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Code { instructions: s.lines().map(|l| l.parse().unwrap()).collect() })
+        Ok(Code { instructions: try!(s.lines().map(str::parse).collect()) })
     }
 }
 

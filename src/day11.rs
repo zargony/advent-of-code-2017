@@ -32,7 +32,7 @@ impl FromStr for Path {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Path { steps: s.split(',').map(|s| s.parse().unwrap()).collect() })
+        Ok(Path { steps: try!(s.split(',').map(str::parse).collect()) })
     }
 }
 

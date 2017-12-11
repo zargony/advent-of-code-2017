@@ -9,10 +9,10 @@ struct Memory {
 }
 
 impl FromStr for Memory {
-    type Err = ();
+    type Err = std::num::ParseIntError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Memory { banks: s.split_whitespace().map(|l| l.parse().unwrap()).collect() })
+        Ok(Memory { banks: try!(s.split_whitespace().map(str::parse).collect()) })
     }
 }
 
