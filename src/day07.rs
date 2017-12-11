@@ -131,19 +131,19 @@ mod tests {
     fn parsing() {
         assert_eq!(Node::from_str("pbgs (66)"), Ok(Node { name: "pbgs".to_string(), weight: 66, children: vec![] }));
         assert_eq!(Node::from_str("fwft (72) -> ktlj, cntj, xhth"), Ok(Node { name: "fwft".to_string(), weight: 72, children: vec!["ktlj".to_string(), "cntj".to_string(), "xhth".to_string()] }));
-        let tree: Tree = "pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)".parse().unwrap();
+        let tree = Tree::from_str("pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)").unwrap();
         assert_eq!(tree.nodes.len(), 13);
     }
 
     #[test]
     fn samples1() {
-        let tree: Tree = "pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)".parse().unwrap();
+        let tree = Tree::from_str("pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)").unwrap();
         assert_eq!(tree.root, "tknk");
     }
 
     #[test]
     fn samples2() {
-        let tree: Tree = "pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)".parse().unwrap();
+        let tree = Tree::from_str("pbga (66)\nxhth (57)\nebii (61)\nhavc (66)\nktlj (57)\nfwft (72) -> ktlj, cntj, xhth\nqoyq (66)\npadx (45) -> pbga, havc, qoyq\ntknk (41) -> ugml, padx, fwft\njptl (61)\nugml (68) -> gyxo, ebii, jptl\ngyxo (61)\ncntj (57)").unwrap();
         assert_eq!(tree.weight("ugml"), Some(68));
         assert_eq!(tree.weight("padx"), Some(45));
         assert_eq!(tree.weight("fwft"), Some(72));

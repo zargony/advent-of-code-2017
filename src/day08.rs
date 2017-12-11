@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn samples() {
-        let code: Code = "b inc 5 if a > 1\na inc 1 if b < 5\nc dec -10 if a >= 1\nc inc -20 if c == 10".parse().unwrap();
+        let code = Code::from_str("b inc 5 if a > 1\na inc 1 if b < 5\nc dec -10 if a >= 1\nc inc -20 if c == 10").unwrap();
         let state = code.run();
         assert_eq!(state.largest_value(), Some(1));
         assert_eq!(state.largest_value_ever(), Some(10));
