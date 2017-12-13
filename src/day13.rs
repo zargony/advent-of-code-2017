@@ -66,9 +66,21 @@ impl Firewall {
         self.severity_with_delay(0).unwrap_or(0)
     }
 
+    /// True if a packet passes the firewall with the given delay
+    fn passes_with_delay(&self, start_delay: u32) -> bool {
+        for t in 0 .. self.depth() + 1 {
+            if let Some(layer) = self.layers.iter().find(|l| l.depth == t) {
+                if (start_delay + t) % (2 * layer.range - 2) == 0 {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
     /// Returns the delay required to pass the firewall without being caught
     fn required_delay_for_passing(&self) -> u32 {
-        (0..).find(|&d| self.severity_with_delay(d).is_none()).unwrap()
+        (0..).find(|&d| self.passes_with_delay(d)).unwrap()
     }
 }
 
