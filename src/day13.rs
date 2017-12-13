@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "nightly", feature(test))]
+
 #[macro_use]
 extern crate nom;
 
@@ -80,6 +82,9 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "nightly")]
+    extern crate test;
+
     use super::*;
 
     #[test]
@@ -97,5 +102,14 @@ mod tests {
         let firewall = Firewall::from_str("0: 3\n1: 2\n4: 4\n6: 4").unwrap();
         assert_eq!(firewall.severity(), 24);
         assert_eq!(firewall.required_delay_for_passing(), 10);
+    }
+
+    #[cfg(feature = "nightly")]
+    #[bench]
+    fn benchmark_required_delay_for_passing(b: &mut test::Bencher) {
+        let firewall: Firewall = include_str!("day13.txt").parse().unwrap();
+        b.iter(|| {
+            firewall.required_delay_for_passing()
+        })
     }
 }

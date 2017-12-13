@@ -7,6 +7,9 @@ description = "Solutions to the Advent of Code 2017 puzzles"
 [dependencies]
 nom = "3"
 
+[features]
+nightly = []
+
 [[bin]]
 name = "day01"
 path = "src/day01.rs"
