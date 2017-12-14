@@ -2,7 +2,7 @@ use std::fmt;
 
 /// Knot Hash Ring
 #[derive(Debug)]
-struct Ring {
+pub struct Ring {
     /// Elements of the ring
     elements: Vec<u8>,
     /// Current position
@@ -22,7 +22,7 @@ impl fmt::LowerHex for Ring {
 
 impl Ring {
     /// Create a new Ring
-    fn new() -> Ring {
+    pub fn new() -> Ring {
         Ring { elements: (0..256).map(|b| b as u8).collect(), position: 0, skip: 0 }
     }
 
@@ -37,7 +37,7 @@ impl Ring {
     }
 
     /// Do 64 hash rounds using the given string
-    fn hash(&mut self, text: &str) {
+    pub fn hash(&mut self, text: &str) {
         for _ in 0..64 {
             for b in text.as_bytes() {
                 self.reverse(*b as usize);
@@ -49,7 +49,7 @@ impl Ring {
     }
 
     /// Resulting hash value
-    fn result(&self) -> [u8; 16] {
+    pub fn result(&self) -> [u8; 16] {
         self.elements.chunks(16).enumerate().fold([0; 16], |mut hash, (i, block)| {
             hash[i] = block.iter().fold(0, |h, b| h ^ b);
             hash
