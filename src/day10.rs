@@ -13,8 +13,8 @@ struct Ring {
 
 impl fmt::LowerHex for Ring {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for block in self.elements.chunks(16) {
-            try!(write!(f, "{:02x}", block.iter().fold(0, |h, b| h ^ b)));
+        for block in &self.result() {
+            try!(write!(f, "{:02x}", block));
         }
         Ok(())
     }
@@ -46,6 +46,14 @@ impl Ring {
                 self.reverse(*b);
             }
         }
+    }
+
+    /// Resulting hash value
+    fn result(&self) -> [u8; 16] {
+        self.elements.chunks(16).enumerate().fold([0; 16], |mut hash, (i, block)| {
+            hash[i] = block.iter().fold(0, |h, b| h ^ b);
+            hash
+        })
     }
 }
 
