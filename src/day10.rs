@@ -1,8 +1,9 @@
 use std::fmt;
 
-/// Knot Hash Ring
+
+/// Knot Hasher using a Knot Hash Ring
 #[derive(Debug)]
-pub struct Ring {
+pub struct KnotHasher {
     /// Elements of the ring
     elements: Vec<u8>,
     /// Current position
@@ -11,7 +12,7 @@ pub struct Ring {
     skip: usize,
 }
 
-impl fmt::LowerHex for Ring {
+impl fmt::LowerHex for KnotHasher {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for block in &self.result() {
             try!(write!(f, "{:02x}", block));
@@ -20,10 +21,10 @@ impl fmt::LowerHex for Ring {
     }
 }
 
-impl Ring {
+impl KnotHasher {
     /// Create a new Ring
-    pub fn new() -> Ring {
-        Ring { elements: (0..256).map(|b| b as u8).collect(), position: 0, skip: 0 }
+    pub fn new() -> KnotHasher {
+        KnotHasher { elements: (0..256).map(|b| b as u8).collect(), position: 0, skip: 0 }
     }
 
     /// Reverse the given length of elements at the current position
@@ -61,13 +62,13 @@ impl Ring {
 fn main() {
     const INPUT: &str = "70,66,255,2,48,0,54,48,80,141,244,254,160,108,1,41";
 
-    let mut ring = Ring::new();
+    let mut ring = KnotHasher::new();
     for step in INPUT.split(',').map(str::parse) {
         ring.reverse(step.unwrap())
     }
     println!("Resulting value of first test round: {}", ring.elements[0] as u32 * ring.elements[1] as u32);
 
-    let mut ring = Ring::new();
+    let mut ring = KnotHasher::new();
     ring.hash(INPUT);
     println!("Resulting knot hash: {:x}", ring);
 }
@@ -79,7 +80,7 @@ mod tests {
 
     #[test]
     fn sample1() {
-        let mut ring = Ring::new();
+        let mut ring = KnotHasher::new();
         ring.elements = (0..5).collect();
         assert_eq!(ring.elements, vec![0, 1, 2, 3, 4]);
         ring.reverse(3);
@@ -94,16 +95,16 @@ mod tests {
 
     #[test]
     fn samples2() {
-        let mut ring = Ring::new();
+        let mut ring = KnotHasher::new();
         ring.hash("");
         assert_eq!(format!("{:x}", ring), "a2582a3a0e66e6e86e3812dcb672a272");
-        let mut ring = Ring::new();
+        let mut ring = KnotHasher::new();
         ring.hash("AoC 2017");
         assert_eq!(format!("{:x}", ring), "33efeb34ea91902bb2f59c9920caa6cd");
-        let mut ring = Ring::new();
+        let mut ring = KnotHasher::new();
         ring.hash("1,2,3");
         assert_eq!(format!("{:x}", ring), "3efbe78a8d82f29979031a4aa0b16a9d");
-        let mut ring = Ring::new();
+        let mut ring = KnotHasher::new();
         ring.hash("1,2,4");
         assert_eq!(format!("{:x}", ring), "63960835bcdc130f0b66d7ff4f6a5a8e");
     }

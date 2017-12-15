@@ -4,7 +4,7 @@ mod day10;
 
 fn part1(key: &str) -> usize {
     (0..128).map(|n| {
-        let mut ring = day10::Ring::new();
+        let mut ring = day10::KnotHasher::new();
         ring.hash(&format!("{}-{}", key, n));
         ring.result()
     }).map::<usize, _>(|row|
