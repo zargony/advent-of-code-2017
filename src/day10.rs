@@ -62,8 +62,8 @@ fn main() {
     const INPUT: &str = "70,66,255,2,48,0,54,48,80,141,244,254,160,108,1,41";
 
     let mut ring = Ring::new();
-    for step in INPUT.split(',').map(|w| w.parse::<usize>().unwrap()) {
-        ring.reverse(step)
+    for step in INPUT.split(',').map(str::parse) {
+        ring.reverse(step.unwrap())
     }
     println!("Resulting value of first test round: {}", ring.elements[0] as u32 * ring.elements[1] as u32);
 
