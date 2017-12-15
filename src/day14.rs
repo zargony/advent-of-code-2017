@@ -4,9 +4,9 @@ mod day10;
 
 fn part1(key: &str) -> usize {
     (0..128).map(|n| {
-        let mut ring = day10::KnotHasher::new();
-        ring.hash(&format!("{}-{}", key, n));
-        ring.result()
+        let mut hasher = day10::KnotHasher::new();
+        hasher.write(&format!("{}-{}", key, n));
+        hasher.finish()
     }).map::<usize, _>(|row|
         row.iter().map(|b| b.count_ones() as usize).sum()
     ).sum()

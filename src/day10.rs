@@ -14,7 +14,7 @@ pub struct KnotHasher {
 
 impl fmt::LowerHex for KnotHasher {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for block in &self.result() {
+        for block in &self.finish() {
             try!(write!(f, "{:02x}", block));
         }
         Ok(())
@@ -37,10 +37,10 @@ impl KnotHasher {
         self.skip += 1;
     }
 
-    /// Do 64 hash rounds using the given string
-    pub fn hash(&mut self, text: &str) {
+    /// Do 64 hash rounds using the given byte sequence
+    pub fn write<T: AsRef<[u8]>>(&mut self, bytes: T) {
         for _ in 0..64 {
-            for b in text.as_bytes() {
+            for b in bytes.as_ref() {
                 self.reverse(*b as usize);
             }
             for b in &[17, 31, 73, 47, 23] {
@@ -50,7 +50,7 @@ impl KnotHasher {
     }
 
     /// Resulting hash value
-    pub fn result(&self) -> [u8; 16] {
+    pub fn finish(&self) -> [u8; 16] {
         self.elements.chunks(16).enumerate().fold([0; 16], |mut hash, (i, block)| {
             hash[i] = block.iter().fold(0, |h, b| h ^ b);
             hash
@@ -69,7 +69,7 @@ fn main() {
     println!("Resulting value of first test round: {}", ring.elements[0] as u32 * ring.elements[1] as u32);
 
     let mut ring = KnotHasher::new();
-    ring.hash(INPUT);
+    ring.write(INPUT);
     println!("Resulting knot hash: {:x}", ring);
 }
 
@@ -96,16 +96,16 @@ mod tests {
     #[test]
     fn samples2() {
         let mut ring = KnotHasher::new();
-        ring.hash("");
+        ring.write("");
         assert_eq!(format!("{:x}", ring), "a2582a3a0e66e6e86e3812dcb672a272");
         let mut ring = KnotHasher::new();
-        ring.hash("AoC 2017");
+        ring.write("AoC 2017");
         assert_eq!(format!("{:x}", ring), "33efeb34ea91902bb2f59c9920caa6cd");
         let mut ring = KnotHasher::new();
-        ring.hash("1,2,3");
+        ring.write("1,2,3");
         assert_eq!(format!("{:x}", ring), "3efbe78a8d82f29979031a4aa0b16a9d");
         let mut ring = KnotHasher::new();
-        ring.hash("1,2,4");
+        ring.write("1,2,4");
         assert_eq!(format!("{:x}", ring), "63960835bcdc130f0b66d7ff4f6a5a8e");
     }
 }
