@@ -3,7 +3,6 @@
 #[macro_use]
 extern crate nom;
 
-use std::collections::HashMap;
 use std::str::FromStr;
 use nom::{digit, anychar};
 
@@ -71,19 +70,20 @@ impl FromStr for Dance {
 
 impl Dance {
     /// Perform the dance
-    fn perform(&self, group_size: usize, iterations: usize) -> String {
-        let mut cache: HashMap<Vec<char>, Vec<char>> = HashMap::new();
+    fn perform(&self, group_size: usize, mut iterations: usize) -> String {
         let mut dancers: Vec<char> = (0..group_size).map(|i| ('a' as usize + i) as u8 as char).collect();
-        for _ in 0..iterations {
-            if let Some(result) = cache.get(&dancers) {
-                dancers = result.clone();
-                continue;
-            }
-            let input = dancers.clone();
+        let initial_dancers = dancers.clone();
+        let mut i = 0;
+        while i < iterations {
             for moove in &self.moves {
                 moove.apply(&mut dancers);
             }
-            cache.insert(input, dancers.clone());
+            i += 1;
+            // Check if dancers moved back to their initial order and
+            // take a shortcut by skipping the repeating sequences
+            if dancers == initial_dancers {
+                iterations = i + iterations % i;
+            }
         }
         dancers.iter().collect()
     }
