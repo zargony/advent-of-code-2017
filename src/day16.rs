@@ -122,9 +122,9 @@ mod tests {
     #[cfg(feature = "nightly")]
     #[bench]
     fn benchmark_simple_dance(b: &mut test::Bencher) {
-        let dance = Dance::from_str("s1,x3/4,pe/b").unwrap();
+        let dance: Dance = include_str!("day16.txt").parse().unwrap();
         b.iter(|| {
-            dance.perform(16, 1)
+            dance.perform(16, 1_000_000)
         })
     }
 }
