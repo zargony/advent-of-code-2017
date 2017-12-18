@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate nom;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::str::FromStr;
 use nom::digit;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct RegisterSet {
     regs: HashMap<char, i64>,
 }
@@ -26,7 +26,7 @@ impl RegisterSet {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Value {
 	Register(char),
 	Number(i64),
@@ -42,7 +42,7 @@ impl Value {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Instruction {
     Snd(Value),
     Set(char, Value),
@@ -80,13 +80,14 @@ impl FromStr for Instruction {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 enum CoreError {
     OutOfInstructions,
+    Deadlock,
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Core {
     code: Vec<Instruction>,
     pc: usize,
@@ -164,9 +165,79 @@ impl Core {
 }
 
 
+#[derive(Debug)]
+struct DualCore {
+    core1: Core,
+    core2: Core,
+    queue1: VecDeque<i64>,
+    queue2: VecDeque<i64>,
+    txcount1: usize,
+    txcount2: usize,
+}
+
+impl FromStr for DualCore {
+    type Err = nom::ErrorKind;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut core1: Core = try!(s.parse());
+        let mut core2: Core = core1.clone();
+        core1.regs.set('p', 0);
+        core2.regs.set('p', 1);
+        Ok(DualCore {
+            core1: core1,
+            core2: core2,
+            queue1: VecDeque::new(),
+            queue2: VecDeque::new(),
+            txcount1: 0,
+            txcount2: 0,
+        })
+    }
+}
+
+impl DualCore {
+    fn run(&mut self) -> (usize, usize) {
+        while let Ok(_) = self.step() {}
+        (self.txcount1, self.txcount2)
+    }
+
+    fn step(&mut self) -> Result<(), CoreError> {
+        let r1 = Self::step_core(&mut self.core1, &mut self.queue1, &mut self.queue2, &mut self.txcount1);
+        let r2 = Self::step_core(&mut self.core2, &mut self.queue2, &mut self.queue1, &mut self.txcount2);
+        match (r1, r2) {
+            (Err(CoreError::Deadlock), Err(CoreError::Deadlock)) => Err(CoreError::Deadlock),
+            (Err(CoreError::Deadlock), r) => r,
+            (r, Err(CoreError::Deadlock)) => r,
+            (Err(e), _) => Err(e),
+            (_, Err(e)) => Err(e),
+            (Ok(_), Ok(_)) => Ok(()),
+        }
+    }
+
+    fn step_core(core: &mut Core, rx: &mut VecDeque<i64>, tx: &mut VecDeque<i64>, count: &mut usize) -> Result<(), CoreError> {
+        match core.code.get(core.pc) {
+            Some(&Instruction::Snd(ref v)) => {
+                tx.push_back(v.get(&core.regs));
+                *count += 1;
+            },
+            Some(&Instruction::Rcv(r)) => {
+                match rx.pop_front() {
+                    Some(n) => core.regs.set(r, n),
+                    None => return Err(CoreError::Deadlock),
+                }
+            },
+            _ => (),
+        }
+        let res = core.step();
+        res
+    }
+}
+
+
 fn main() {
     let mut core: Core = include_str!("day18.txt").parse().unwrap();
     println!("Value of recovered frequency: {}", core.run_until_recv().unwrap());
+    let mut core: DualCore = include_str!("day18.txt").parse().unwrap();
+    println!("Number of values program 1 sent: {}", core.run().1);
 }
 
 
@@ -183,5 +254,13 @@ mod tests {
     fn samples1() {
         let mut core = Core::from_str("set a 1\nadd a 2\nmul a a\nmod a 5\nsnd a\nset a 0\nrcv a\njgz a -1\nset a 1\njgz a -2").unwrap();
         assert_eq!(core.run_until_recv(), Some(4));
+    }
+
+    #[test]
+    fn samples2() {
+        let mut core = DualCore::from_str("snd 1\nsnd 2\nsnd p\nrcv a\nrcv b\nrcv c\nrcv d").unwrap();
+        assert_eq!(core.run(), (3, 3));
+        assert_eq!(core.core1.regs.get('c'), 1);
+        assert_eq!(core.core2.regs.get('c'), 0);
     }
 }
