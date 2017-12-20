@@ -1,12 +1,13 @@
 #[macro_use]
 extern crate nom;
 
+use std::collections::HashSet;
 use std::str::FromStr;
 use nom::{space, digit};
 
 
 /// A particle in space
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 struct Particle {
     pos: (i32, i32, i32),
     vel: (i32, i32, i32),
@@ -56,26 +57,73 @@ impl Particle {
 
 
 /// A cloud of particles in space
-#[derive(Debug)]
-struct Cloud(Vec<Particle>);
+#[derive(Debug, Clone)]
+struct Cloud(Vec<Option<Particle>>);
 
 impl FromStr for Cloud {
     type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Cloud(try!(s.lines().map(str::parse).collect())))
+        Ok(Cloud(try!(s.lines().map(str::parse).map(|r| r.map(|p| Some(p))).collect())))
     }
 }
 
 impl Cloud {
+    /// Number of particles
+    fn count(&self) -> usize {
+        self.0.iter().filter(|o| o.is_some()).count()
+    }
+
+    /// Returns a new cloud with colliding particles removed
+    fn collision(&self) -> Cloud {
+        let mut collisioned: HashSet<usize> = HashSet::new();
+        for i in 1..self.0.len() {
+            for j in 0..i {
+                if let Some(ref p1) = self.0[i] {
+                    if let Some(ref p2) = self.0[j] {
+                        if p1.pos == p2.pos {
+                            collisioned.insert(i);
+                            collisioned.insert(j);
+                        }
+                    }
+                }
+            }
+        }
+        Cloud(self.0.iter()
+            .enumerate()
+            .map(|(i, o)|
+                if !collisioned.contains(&i) { o.clone() } else { None }
+            )
+            .collect()
+        )
+    }
+
     /// Returns a new cloud that advanced t ticks in time
     fn tick(&self, t: usize) -> Cloud {
-        Cloud(self.0.iter().map(|p| p.tick(t)).collect())
+        Cloud(self.0.iter()
+            .map(|o| match *o {
+                Some(ref p) => Some(p.tick(t)),
+                None => None
+            })
+            .collect()
+        )
+    }
+
+    /// Returns a new cloud that advanced t ticks in time, removing colliding particles
+    fn tick_with_collision(&self, t: usize) -> Cloud {
+        (0..t).fold(self.clone(), |c, _| c.collision().tick(1))
     }
 
     /// Index of particle with smallest distance to origin
     fn nearest(&self) -> Option<usize> {
-        self.0.iter().map(Particle::distance).enumerate().min_by_key(|&(_, d)| d).map(|(i, _)| i)
+        self.0.iter()
+            .filter_map(|o| match *o {
+                Some(ref p) => Some(p.distance()),
+                None => None
+            })
+            .enumerate()
+            .min_by_key(|&(_, d)| d)
+            .map(|(i, _)| i)
     }
 }
 
@@ -83,6 +131,7 @@ impl Cloud {
 fn main() {
     let cloud: Cloud = include_str!("day20.txt").parse().unwrap();
     println!("Particle staying closest to origin: {}", cloud.tick(1000).nearest().unwrap());
+    println!("Particles left after collisions: {}", cloud.tick_with_collision(1000).count());
 }
 
 
@@ -93,13 +142,38 @@ mod tests {
     #[test]
     fn samples1() {
         let cloud = Cloud::from_str("p=<3,0,0>, v=<2,0,0>, a=<-1,0,0>\np=<4,0,0>, v=<0,0,0>, a=<-2,0,0>\n").unwrap();
-        assert_eq!(cloud.0[0].tick(0).pos, ( 3, 0, 0));
-        assert_eq!(cloud.0[1].tick(0).pos, ( 4, 0, 0));
-        assert_eq!(cloud.0[0].tick(1).pos, ( 4, 0, 0));
-        assert_eq!(cloud.0[1].tick(1).pos, ( 2, 0, 0));
-        assert_eq!(cloud.0[0].tick(2).pos, ( 4, 0, 0));
-        assert_eq!(cloud.0[1].tick(2).pos, (-2, 0, 0));
-        assert_eq!(cloud.0[0].tick(3).pos, ( 3, 0, 0));
-        assert_eq!(cloud.0[1].tick(3).pos, (-8, 0, 0));
+        assert_eq!(cloud.tick(0).0[0], Some(Particle { pos: ( 3, 0, 0), vel: ( 2, 0, 0), acc: (-1, 0, 0) }));
+        assert_eq!(cloud.tick(0).0[1], Some(Particle { pos: ( 4, 0, 0), vel: ( 0, 0, 0), acc: (-2, 0, 0) }));
+        assert_eq!(cloud.tick(1).0[0], Some(Particle { pos: ( 4, 0, 0), vel: ( 1, 0, 0), acc: (-1, 0, 0) }));
+        assert_eq!(cloud.tick(1).0[1], Some(Particle { pos: ( 2, 0, 0), vel: (-2, 0, 0), acc: (-2, 0, 0) }));
+        assert_eq!(cloud.tick(2).0[0], Some(Particle { pos: ( 4, 0, 0), vel: ( 0, 0, 0), acc: (-1, 0, 0) }));
+        assert_eq!(cloud.tick(2).0[1], Some(Particle { pos: (-2, 0, 0), vel: (-4, 0, 0), acc: (-2, 0, 0) }));
+        assert_eq!(cloud.tick(3).0[0], Some(Particle { pos: ( 3, 0, 0), vel: (-1, 0, 0), acc: (-1, 0, 0) }));
+        assert_eq!(cloud.tick(3).0[1], Some(Particle { pos: (-8, 0, 0), vel: (-6, 0, 0), acc: (-2, 0, 0) }));
+    }
+
+    #[test]
+    fn samples2() {
+        let cloud = Cloud::from_str("p=<-6,0,0>, v=<3,0,0>, a=<0,0,0>\np=<-4,0,0>, v=<2,0,0>, a=<0,0,0>\np=<-2,0,0>, v=<1,0,0>, a=<0,0,0>\np=<3,0,0>, v=<-1,0,0>, a=<0,0,0>\n").unwrap();
+        assert_eq!(cloud.tick_with_collision(0).0[0], Some(Particle { pos: (-6, 0, 0), vel: ( 3, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(0).0[1], Some(Particle { pos: (-4, 0, 0), vel: ( 2, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(0).0[2], Some(Particle { pos: (-2, 0, 0), vel: ( 1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(0).0[3], Some(Particle { pos: ( 3, 0, 0), vel: (-1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(0).count(), 4);
+        assert_eq!(cloud.tick_with_collision(1).0[0], Some(Particle { pos: (-3, 0, 0), vel: ( 3, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(1).0[1], Some(Particle { pos: (-2, 0, 0), vel: ( 2, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(1).0[2], Some(Particle { pos: (-1, 0, 0), vel: ( 1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(1).0[3], Some(Particle { pos: ( 2, 0, 0), vel: (-1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(1).count(), 4);
+        assert_eq!(cloud.tick_with_collision(2).0[0], Some(Particle { pos: ( 0, 0, 0), vel: ( 3, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(2).0[1], Some(Particle { pos: ( 0, 0, 0), vel: ( 2, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(2).0[2], Some(Particle { pos: ( 0, 0, 0), vel: ( 1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(2).0[3], Some(Particle { pos: ( 1, 0, 0), vel: (-1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(2).count(), 4);
+        assert_eq!(cloud.tick_with_collision(3).0[0], None);
+        assert_eq!(cloud.tick_with_collision(3).0[1], None);
+        assert_eq!(cloud.tick_with_collision(3).0[2], None);
+        assert_eq!(cloud.tick_with_collision(3).0[3], Some(Particle { pos: ( 0, 0, 0), vel: (-1, 0, 0), acc: ( 0, 0, 0) }));
+        assert_eq!(cloud.tick_with_collision(3).count(), 1);
     }
 }
