@@ -20,8 +20,8 @@ impl FromStr for Particle {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         named!(integer<&str, u32>, map_res!(digit, str::parse));
         named!(number<&str, i32>, alt!(
-            map!(preceded!(tag!("-"), integer), |n| -(n as i32)) |
-            map!(integer, |n| n as i32)
+            preceded!(tag!("-"), integer) => { |n| -(n as i32) } |
+                                 integer  => { |n|   n as i32  }
         ));
         named!(triple<&str, (i32, i32, i32)>, do_parse!(
             tag!("<") >> a: number >> tag!(",") >> b: number >> tag!(",") >> c: number >> tag!(">") >> ((a, b, c))

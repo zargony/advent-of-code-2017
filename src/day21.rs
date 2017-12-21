@@ -151,7 +151,10 @@ impl FromStr for Rule {
     type Err = nom::ErrorKind;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        named!(pixel<&str, bool>, alt!(tag!(".") => { |_| false } | tag!("#") => { |_| true }));
+        named!(pixel<&str, bool>, alt!(
+            tag!(".") => { |_| false } |
+            tag!("#") => { |_| true }
+        ));
         named!(row<&str, Vec<bool>>, many1!(pixel));
         named!(grid<&str, Grid>, map!(separated_list_complete!(tag!("/"), row), |v| Grid { pixels: v }));
         complete!(s, do_parse!(

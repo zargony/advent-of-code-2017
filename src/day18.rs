@@ -60,12 +60,12 @@ impl FromStr for Instruction {
         named!(register<&str, char>, one_of!("abcdefghijklmnopqrstuvwxyz"));
         named!(integer<&str, u64>, map_res!(digit, str::parse));
         named!(number<&str, i64>, alt!(
-            map!(preceded!(tag!("-"), integer), |n| -(n as i64)) |
-            map!(integer, |n| n as i64)
+            preceded!(tag!("-"), integer) => { |n| -(n as i64) } |
+                                 integer  => { |n|   n as i64  }
         ));
         named!(value<&str, Value>, alt!(
             register => { |ch| Value::Register(ch) } |
-            number => { |n| Value::Number(n) }
+            number   => {  |n| Value::Number(n) }
         ));
         complete!(s, alt!(
             do_parse!(tag!("snd") >> x: ws!(value) >> (Instruction::Snd(x))) |

@@ -58,22 +58,22 @@ impl FromStr for Instruction {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         named!(identifier<&str, String>, map_res!(ws!(alpha), str::parse));
-        named!(number<&str, i32>, map_res!(ws!(digit), str::parse));
+        named!(number<&str, u32>, map_res!(ws!(digit), str::parse));
         named!(value<&str, i32>, alt!(
-            map!(preceded!(tag!("-"), number), |x| -x) |
-            number
+            preceded!(tag!("-"), number) => { |x| -(x as i32) } |
+                                 number  => { |x|   x as i32  }
         ));
         named!(operation<&str, Operation>, alt!(
-            map!(preceded!(tag!("inc"), ws!(value)), |x| Operation::Inc(x)) |
-            map!(preceded!(tag!("dec"), ws!(value)), |x| Operation::Dec(x))
+            preceded!(tag!("inc"), ws!(value)) => { |x| Operation::Inc(x) } |
+            preceded!(tag!("dec"), ws!(value)) => { |x| Operation::Dec(x) }
         ));
         named!(condition<&str, Condition>, alt!(
-            map!(preceded!(tag!("=="), ws!(value)), |x| Condition::Eq(x)) |
-            map!(preceded!(tag!("!="), ws!(value)), |x| Condition::Ne(x)) |
-            map!(preceded!(tag!("<"), ws!(value)), |x| Condition::Lt(x)) |
-            map!(preceded!(tag!("<="), ws!(value)), |x| Condition::Le(x)) |
-            map!(preceded!(tag!(">"), ws!(value)), |x| Condition::Gt(x)) |
-            map!(preceded!(tag!(">="), ws!(value)), |x| Condition::Ge(x))
+            preceded!(tag!("=="), ws!(value)) => { |x| Condition::Eq(x) } |
+            preceded!(tag!("!="), ws!(value)) => { |x| Condition::Ne(x) } |
+            preceded!(tag!("<"),  ws!(value)) => { |x| Condition::Lt(x) } |
+            preceded!(tag!("<="), ws!(value)) => { |x| Condition::Le(x) } |
+            preceded!(tag!(">"),  ws!(value)) => { |x| Condition::Gt(x) } |
+            preceded!(tag!(">="), ws!(value)) => { |x| Condition::Ge(x) }
         ));
         complete!(s, do_parse!(
             target_register: identifier >>
