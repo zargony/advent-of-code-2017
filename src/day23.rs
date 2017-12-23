@@ -16,6 +16,10 @@ impl RegisterSet {
         RegisterSet { regs: HashMap::new() }
     }
 
+    fn clear(&mut self) {
+        self.regs.clear();
+    }
+
     fn get(&self, r: char) -> i64 {
         self.regs.get(&r).cloned().unwrap_or(0)
     }
@@ -96,6 +100,12 @@ impl FromStr for Core {
 }
 
 impl Core {
+    fn reset(&mut self) {
+        self.pc = 0;
+        self.regs.clear();
+        self.multiplications = 0;
+    }
+
     fn step(&mut self) -> Result<(), ()> {
         match self.code.get(self.pc) {
             Some(ins) => {
@@ -137,6 +147,20 @@ fn main() {
     let mut core: Core = include_str!("day23.txt").parse().unwrap();
     core.run();
     println!("Number of invoked mul instructions: {}", core.multiplications);
+
+    core.reset();
+    core.regs.set('a', 1);
+    // core.run();
+    // println!("Value of register h after completion: {}", core.regs.get('h'));
+
+    // Optimized Rust version:
+    //```
+    // let h = (0..1000+1).filter(|i| {
+    //     let b = 109900 + 17 * i;
+    //     (2..b/2).any(|d| (d..b/2).any(|e| d * e == b))
+    // }).count();
+    // println!("Value of register h after completion: {}", h);
+    //```
 }
 
 
